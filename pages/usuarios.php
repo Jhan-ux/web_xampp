@@ -1,47 +1,41 @@
 <?php
-session_start();
-require "conexion.php";
+require_once __DIR__ . '/../includes/auth.php';
+require_login();
+require_once __DIR__ . '/../config/conexion.php';
 
-if (!isset($_SESSION['usuario'])) {
-    header("Location: login.html");
-    exit();
-}
-
-// Ahora seleccionamos TODAS las columnas que queremos mostrar
 $stmt = $conexion->query("SELECT id, nombres, usuario, telefono, correo AS email FROM usuarios ORDER BY id DESC");
-$usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$usuarios = $stmt->fetchAll();
+
+$mensajes = [
+    'agregado'          => 'Usuario agregado correctamente.',
+    'editado'           => 'Usuario actualizado correctamente.',
+    'eliminado'         => 'Usuario eliminado correctamente.',
+    'no_autoeliminar'   => 'No podés eliminar tu propio usuario mientras estás logueado con él.',
+    'error_eliminar'    => 'Ocurrió un error al eliminar el usuario.',
+];
+$msg = $_GET['msg'] ?? '';
+$esError = in_array($msg, ['no_autoeliminar', 'error_eliminar'], true);
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Lista de Usuarios</title>
-    <style>
-        body{font-family:Arial,sans-serif;background:#f4f6f9;padding:20px}
-        .container{max-width:1100px;margin:0 auto;background:white;padding:30px;border-radius:10px;box-shadow:0 5px 15px rgba(0,0,0,0.1)}
-        h2{color:#007bff;text-align:center;margin-bottom:30px}
-        .btn{padding:12px 20px;border:none;border-radius:6px;color:white;text-decoration:none;display:inline-block;margin:5px;font-weight:bold}
-        .btn-add{background:#28a745}
-        .btn-pdf{background:#007bff}
-        .btn-back{background:#6c757d}
-        .btn-logout{background:#dc3545;float:right}
-        table{width:100%;border-collapse:collapse;margin-top:20px}
-        th, td{padding:15px;text-align:left;border-bottom:1px solid #ddd}
-        th{background:#007bff;color:white}
-        tr:hover{background:#f1f1f1}
-        .actions a{padding:8px 15px;border-radius:4px;text-decoration:none;margin:0 5px}
-        .edit{background:#ffc107;color:black}
-        .delete{background:#dc3545;color:white}
-        .no-data{padding:50px;text-align:center;color:#888;font-size:18px}
-    </style>
+    <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
 <div class="container">
     <h2>Lista de Usuarios</h2>
 
+    <?php if (isset($mensajes[$msg])): ?>
+        <div class="<?= $esError ? 'alert-error' : 'alert-success' ?>">
+            <?= htmlspecialchars($mensajes[$msg]) ?>
+        </div>
+    <?php endif; ?>
+
     <div style="margin-bottom:20px">
         <a href="agregar.php" class="btn btn-add">+ Agregar usuario</a>
-        <a href="reporte.php" class="btn btn-pdf">Descargar PDF</a>
+        <a href="reporte.php" class="btn btn-pdf" target="_blank">Descargar PDF</a>
         <a href="inicio.php" class="btn btn-back">Volver al menú</a>
         <a href="logout.php" class="btn btn-logout">Cerrar sesión</a>
     </div>
@@ -59,7 +53,7 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </thead>
         <tbody>
             <?php if ($usuarios && count($usuarios) > 0): ?>
-                <?php foreach($usuarios as $u): ?>
+                <?php foreach ($usuarios as $u): ?>
                     <tr>
                         <td><?= $u['id'] ?></td>
                         <td><?= htmlspecialchars($u['nombres'] ?? 'Sin nombre') ?></td>

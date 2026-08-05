@@ -1,8 +1,8 @@
 <?php
-// conexion.php - Versión corregida y garantizada
+// config/conexion.php - Conexión PDO a la base de datos
 
 $host = 'localhost';
-$db   = 'bd_entregable';  // CAMBIA ESTO por el nombre real de tu BD
+$db   = 'bd_entregable';
 $user = 'root';                      // normalmente root en XAMPP
 $pass = '';                          // normalmente vacío en XAMPP
 $charset = 'utf8mb4';

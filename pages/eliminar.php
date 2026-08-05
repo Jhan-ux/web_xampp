@@ -1,11 +1,7 @@
 <?php
-session_start();
-require "conexion.php";
-
-if (!isset($_SESSION['usuario'])) {
-    header("Location: login.html");
-    exit();
-}
+require_once __DIR__ . '/../includes/auth.php';
+require_login();
+require_once __DIR__ . '/../config/conexion.php';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($id <= 0) {
@@ -14,13 +10,12 @@ if ($id <= 0) {
 }
 
 // Seguridad extra: evitar que alguien se elimine a sí mismo por accidente
-if ($id == $_SESSION['id_usuario'] ?? 0) {
+if ($id === (int)($_SESSION['id_usuario'] ?? 0)) {
     header("Location: usuarios.php?msg=no_autoeliminar");
     exit();
 }
 
 try {
-    // Tabla correcta = usuarios (con s)
     $stmt = $conexion->prepare("DELETE FROM usuarios WHERE id = ?");
     $stmt->execute([$id]);
 
@@ -31,4 +26,3 @@ try {
     header("Location: usuarios.php?msg=error_eliminar");
     exit();
 }
-?>
