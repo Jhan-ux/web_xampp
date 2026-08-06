@@ -1,7 +1,8 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
-require_login();
+require_once __DIR__ . '/../includes/layout.php';
 require_once __DIR__ . '/../config/conexion.php';
+require_login();
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($id <= 0) {
@@ -10,6 +11,7 @@ if ($id <= 0) {
 }
 
 $mensaje = '';
+$tipo_alerta = 'alert-error';
 
 // Cargar datos del usuario
 $stmt = $conexion->prepare("SELECT * FROM usuarios WHERE id = ? LIMIT 1");
@@ -22,6 +24,9 @@ if (!$u) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validar CSRF
+    validate_csrf_token($_POST['csrf_token'] ?? '');
+
     $nombres   = trim($_POST['nombres'] ?? '');
     $usuario   = trim($_POST['usuario'] ?? '');
     $telefono  = trim($_POST['telefono'] ?? '');
@@ -33,12 +38,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         try {
             if ($password === '') {
-                // Solo actualiza sin cambiar contraseña
                 $sql = "UPDATE usuarios SET nombres = ?, usuario = ?, telefono = ?, correo = ? WHERE id = ?";
                 $stmt = $conexion->prepare($sql);
                 $stmt->execute([$nombres, $usuario, $telefono, $correo, $id]);
             } else {
-                // Cambia también la contraseña
                 $sql = "UPDATE usuarios SET nombres = ?, usuario = ?, password = ?, telefono = ?, correo = ? WHERE id = ?";
                 $stmt = $conexion->prepare($sql);
                 $hash = password_hash($password, PASSWORD_DEFAULT);
@@ -57,42 +60,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+render_header("Editar Usuario");
 ?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Editar Usuario</title>
-    <link rel="stylesheet" href="../assets/style.css">
-</head>
-<body>
+
 <div class="container container-form">
-    <h2>Editar Usuario</h2>
+    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 2rem;">
+        <a href="usuarios.php" class="btn btn-gray" style="padding: 0.5rem 1rem;">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h2 style="margin-bottom: 0;">Editar Usuario</h2>
+    </div>
 
     <?php if ($mensaje): ?>
-        <div class="error"><?= htmlspecialchars($mensaje) ?></div>
+        <div class="alert <?= $tipo_alerta ?>">
+            <i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($mensaje) ?>
+        </div>
     <?php endif; ?>
 
     <form method="POST">
-        <label for="nombres">Nombre completo *</label>
-        <input type="text" id="nombres" name="nombres" value="<?= htmlspecialchars($u['nombres'] ?? '') ?>" required>
+        <input type="hidden" name="csrf_token" value="<?= get_csrf_token() ?>">
 
-        <label for="usuario">Usuario *</label>
-        <input type="text" id="usuario" name="usuario" value="<?= htmlspecialchars($u['usuario']) ?>" required>
+        <div class="form-group">
+            <label for="nombres">Nombre completo *</label>
+            <input type="text" id="nombres" name="nombres" value="<?= htmlspecialchars($u['nombres'] ?? '') ?>" required>
+        </div>
 
-        <label for="telefono">Teléfono</label>
-        <input type="text" id="telefono" name="telefono" value="<?= htmlspecialchars($u['telefono'] ?? '') ?>" placeholder="Ej: 987654321">
+        <div class="form-group">
+            <label for="usuario">Usuario *</label>
+            <input type="text" id="usuario" name="usuario" value="<?= htmlspecialchars($u['usuario']) ?>" required>
+        </div>
 
-        <label for="email">Correo electrónico</label>
-        <input type="email" id="email" name="email" value="<?= htmlspecialchars($u['correo'] ?? '') ?>" placeholder="opcional">
+        <div class="form-group">
+            <label for="telefono">Teléfono</label>
+            <input type="text" id="telefono" name="telefono" value="<?= htmlspecialchars($u['telefono'] ?? '') ?>" placeholder="Ej: 987654321">
+        </div>
 
-        <label for="password">Nueva contraseña (dejar vacío para no cambiar)</label>
-        <input type="password" id="password" name="password" placeholder="Solo si quieres cambiarla">
+        <div class="form-group">
+            <label for="email">Correo electrónico</label>
+            <input type="email" id="email" name="email" value="<?= htmlspecialchars($u['correo'] ?? '') ?>" placeholder="opcional">
+        </div>
 
-        <button type="submit">Actualizar Usuario</button>
+        <div class="form-group">
+            <label for="password">Nueva contraseña</label>
+            <input type="password" id="password" name="password" placeholder="Dejar vacío para no cambiar">
+            <small style="color: var(--gray); font-size: 0.8rem;">Solo si deseas actualizar la clave actual.</small>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">
+            <i class="fas fa-sync-alt"></i> Actualizar Usuario
+        </button>
     </form>
-
-    <a href="usuarios.php">Volver a la lista</a>
 </div>
-</body>
-</html>
+
+<?php render_footer(); ?>
