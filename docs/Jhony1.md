@@ -1,0 +1,1 @@
+Ingeniero de Software con sólida experiencia en el diseño, desarrollo y optimización de aplicaciones escalables. Apasionado por resolver problemas complejos mediante soluciones innovadoras y eficientes, aplicando buenas prácticas de programación y metodologías ágiles. Comprometido con la mejora continua y el trabajo en equipo para entregar productos de alta calidad.
